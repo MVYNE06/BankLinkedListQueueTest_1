@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Queue Simulation | St. Joseph's Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Google Brand Colors */
+            --google-blue: #4285F4;
+            --google-red: #EA4335;
+            --google-yellow: #FBBC05;
+            --google-green: #34A853;
+            --bg-color: #f8f9fa;
+            --text-color: #202124;
+        }
+
+        body {
+            font-family: 'Google Sans', sans-serif; /* Google's actual font style */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Lock height to screen size */
+            overflow: hidden; /* Prevent page scrolling */
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #dadce0;
+            box-shadow: 0 1px 2px rgba(60,64,67,0.1);
+            z-index: 10;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        .logo { font-size: 1.4rem; font-weight: 500; color: #5f6368; display: flex; align-items: center; gap: 5px; }
+        /* Google Style Multi-color Text */
+        .g-blue { color: var(--google-blue); font-weight: bold; }
+        .g-red { color: var(--google-red); font-weight: bold; }
+        .g-yellow { color: var(--google-yellow); font-weight: bold; }
+        .g-green { color: var(--google-green); font-weight: bold; }
+
+        .badge { background: #e8f0fe; color: var(--google-blue); padding: 6px 14px; border-radius: 4px; font-size: 0.85rem; font-weight: 500; }
+
+        /* --- MAIN LAYOUT (Split Screen) --- */
+        main {
+            display: flex;
+            flex: 1; /* Take remaining height */
+            height: 100%; /* Ensure it fills the space */
+            overflow: hidden; /* Don't scroll the container */
+        }
+
+        /* LEFT: 3D Scene */
+        .scene-wrapper {
+            flex: 1.5; /* Takes 60% width */
+            background: white;
+            position: relative;
+            border-right: 1px solid #dadce0;
+        }
+        
+        canvas { display: block; width: 100%; height: 100%; outline: none; }
+        
+        #loader {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; color: var(--google-blue);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 20; transition: opacity 0.5s; font-weight: 500;
+        }
+
+        /* RIGHT: Dashboard */
+        .dashboard-panel {
+            flex: 1; /* Takes 40% width */
+            background: white;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%; /* Important for internal scrolling */
+            box-sizing: border-box;
+        }
+
+        /* Card Styling */
+        .card {
+            background: white;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        h2 { margin: 0 0 16px 0; font-size: 1.1rem; color: #202124; font-weight: 500; }
+
+        /* Inputs */
+        .input-group { display: flex; gap: 12px; margin-bottom: 0; }
+        
+        input {
+            padding: 10px 14px; border: 1px solid #dadce0; border-radius: 4px;
+            font-size: 1rem; width: 80px; outline: none; transition: 0.2s;
+            font-family: inherit; color: #3c4043;
+        }
+        input:focus { border-color: var(--google-blue); border-width: 2px; padding: 9px 13px; }
+
+        /* Buttons (Google Material Style) */
+        button {
+            flex: 1; padding: 10px 24px; border: none; border-radius: 4px;
+            font-weight: 500; cursor: pointer; transition: 0.2s;
+            font-family: 'Google Sans', sans-serif; font-size: 0.95rem;
+            box-shadow: 0 1px 2px rgba(60,64,67,0.3);
+        }
+        
+        button:active { box-shadow: none; transform: translateY(1px); }
+        
+        .btn-add { background-color: var(--google-blue); color: white; }
+        .btn-add:hover { background-color: #3367d6; box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
+        
+        .btn-serve { background-color: var(--google-green); color: white; }
+        .btn-serve:hover { background-color: #2d9249; box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
+
+        /* Queue List Container - FIXES SCROLLING */
+        .queue-container {
+            flex: 1; /* Takes remaining height */
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Crucial for scrolling inside flex items */
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .queue-header {
+            padding: 16px;
+            border-bottom: 1px solid #dadce0;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+            font-weight: 500;
+        }
+
+        /* The actual scrolling part */
+        .queue-list { 
+            flex: 1; 
+            overflow-y: auto; /* Scroll ONLY here */
+            padding: 10px;
+        }
+        
+        /* Scrollbar styling */
+        .queue-list::-webkit-scrollbar { width: 8px; }
+        .queue-list::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
+
+        /* Ticket Cards */
+        .ticket {
+            background: white;
+            border: 1px solid #dadce0;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Blue accent bar for regular */
+        .ticket::before {
+            content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+            background: var(--google-blue);
+        }
+
+        /* Senior Styling */
+        .ticket.senior { background: #fef7e0; border-color: #fce8b2; }
+        .ticket.senior::before { background: var(--google-yellow); }
+
+        .ticket-info strong { display: block; font-size: 1rem; color: #202124; }
+        .ticket-info span { font-size: 0.85rem; color: #5f6368; }
+
+        .priority-badge {
+            background: var(--google-yellow); color: #202124;
+            padding: 4px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: bold; letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span>
+            <span style="margin-left: 8px; font-weight: 400; color: #5f6368;">Bank Queue</span>
+        </div>
+        <div class="badge">BCA Project 2026</div>
+    </header>
+
+    <main>
+        <div class="scene-wrapper">
+            <div id="loader"><h2>Loading Simulation...</h2></div>
+            <canvas id="canvas3d"></canvas>
+        </div>
+
+        <div class="dashboard-panel">
+            
+            <div class="card">
+                <h2>New Customer</h2>
+                <div class="input-group">
+                    <input type="number" id="ageInput" placeholder="Age" value="25" min="1" max="120">
+                    <button class="btn-add" id="addBtn">Add to Queue</button>
+                    <button class="btn-serve" id="serveBtn">Serve Next</button>
+                </div>
+            </div>
+
+            <div class="queue-container">
+                <div class="queue-header" id="queueHeader">Current Queue (0)</div>
+                <div class="queue-list" id="queueDisplay">
+                    <div style="text-align: center; margin-top: 40px; color: #9aa0a6;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; margin-bottom: 10px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <p>No customers waiting</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { Application } from 'https://unpkg.com/@splinetool/runtime';
+
+        const canvas = document.getElementById('canvas3d');
+        const app = new Application(canvas);
+        
+        let queue = []; 
+        let tokenCounter = 101; 
+        let splineLoaded = false;
+
+        app.load('https://prod.spline.design/XZ3paSVSaiaaP2KZ/scene.splinecode')
+            .then(() => {
+                splineLoaded = true;
+                const loader = document.getElementById('loader');
+                loader.style.opacity = 0;
+                setTimeout(() => loader.style.display = 'none', 500);
+                updateSplineCount(0);
+            });
+
+        window.addCustomer = function() {
+            const ageInput = document.getElementById('ageInput');
+            const age = parseInt(ageInput.value);
+            
+            if(!age) { 
+                // Google-style shake animation for error
+                ageInput.style.borderColor = '#EA4335';
+                setTimeout(() => ageInput.style.borderColor = '#dadce0', 500);
+                return; 
+            }
+
+            const newCustomer = { token: tokenCounter, age: age, isSenior: age >= 60 };
+            tokenCounter++;
+
+            if (queue.length === 0) {
+                queue.push(newCustomer);
+            } else if (newCustomer.isSenior) {
+                let inserted = false;
+                for (let i = 0; i < queue.length; i++) {
+                    if (!queue[i].isSenior) {
+                        queue.splice(i, 0, newCustomer);
+                        inserted = true;
+                        break;
+                    }
+                }
+                if (!inserted) queue.push(newCustomer);
+            } else {
+                queue.push(newCustomer);
+            }
+
+            updateSplineCount(queue.length);
+            updateDisplay();
+        }
+
+        window.serveCustomer = function() {
+            if (queue.length === 0) { return; } 
+            queue.shift();
+            updateSplineCount(queue.length);
+            updateDisplay();
+        }
+
+        function updateSplineCount(count) {
+            if (!splineLoaded) return;
+            try { app.setVariable('CurrentToken', count); } catch (err) {}
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('queueDisplay');
+            const header = document.getElementById('queueHeader');
+            header.innerText = `Current Queue (${queue.length})`;
+
+            if (queue.length === 0) {
+                display.innerHTML = `
+                    <div style="text-align: center; margin-top: 40px; color: #9aa0a6;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; margin-bottom: 10px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <p>No customers waiting</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            queue.forEach(person => {
+                if (person.isSenior) {
+                    html += `
+                    <div class="ticket senior">
+                        <div class="ticket-info">
+                            <strong>Token #${person.token}</strong>
+                            <span>Age: ${person.age}</span>
+                        </div>
+                        <div class="priority-badge">PRIORITY</div>
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="ticket">
+                        <div class="ticket-info">
+                            <strong>Token #${person.token}</strong>
+                            <span>Age: ${person.age}</span>
+                        </div>
+                    </div>`;
+                }
+            });
+            display.innerHTML = html;
+            
+            // Auto scroll to bottom of list when adding (optional, removed for better UX logic)
+            // display.scrollTop = display.scrollHeight; 
+        }
+
+        document.getElementById('addBtn').onclick = window.addCustomer;
+        document.getElementById('serveBtn').onclick = window.serveCustomer;
+    </script>
+</body>
+</html>
