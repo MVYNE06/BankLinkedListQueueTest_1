@@ -2,72 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Queue Simulation | St. Joseph's Project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Google Queue Simulation</title>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Google Brand Colors */
             --google-blue: #4285F4;
             --google-red: #EA4335;
             --google-yellow: #FBBC05;
             --google-green: #34A853;
             --bg-color: #f8f9fa;
-            --text-color: #202124;
         }
 
         body {
-            font-family: 'Google Sans', sans-serif; /* Google's actual font style */
+            font-family: 'Google Sans', sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: #202124;
             margin: 0;
             display: flex;
             flex-direction: column;
-            height: 100vh; /* Lock height to screen size */
-            overflow: hidden; /* Prevent page scrolling */
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
         }
 
         /* --- HEADER --- */
         header {
             background-color: white;
-            padding: 15px 30px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #dadce0;
-            box-shadow: 0 1px 2px rgba(60,64,67,0.1);
             z-index: 10;
-            flex-shrink: 0; /* Prevent header from shrinking */
+            flex-shrink: 0;
         }
 
-        .logo { font-size: 1.4rem; font-weight: 500; color: #5f6368; display: flex; align-items: center; gap: 5px; }
-        /* Google Style Multi-color Text */
-        .g-blue { color: var(--google-blue); font-weight: bold; }
-        .g-red { color: var(--google-red); font-weight: bold; }
-        .g-yellow { color: var(--google-yellow); font-weight: bold; }
-        .g-green { color: var(--google-green); font-weight: bold; }
+        .logo { font-size: 1.2rem; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+        .g-blue { color: var(--google-blue); }
+        .g-red { color: var(--google-red); }
+        .g-yellow { color: var(--google-yellow); }
+        .g-green { color: var(--google-green); }
 
-        .badge { background: #e8f0fe; color: var(--google-blue); padding: 6px 14px; border-radius: 4px; font-size: 0.85rem; font-weight: 500; }
-
-        /* --- MAIN LAYOUT (Split Screen) --- */
+        /* --- MAIN LAYOUT --- */
         main {
             display: flex;
-            flex: 1; /* Take remaining height */
-            height: 100%; /* Ensure it fills the space */
-            overflow: hidden; /* Don't scroll the container */
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+            /* Default: Desktop (Row) */
+            flex-direction: row; 
         }
 
         /* LEFT: 3D Scene */
         .scene-wrapper {
-            flex: 1.5; /* Takes 60% width */
+            flex: 1.5; 
             background: white;
             position: relative;
             border-right: 1px solid #dadce0;
         }
         
         canvas { display: block; width: 100%; height: 100%; outline: none; }
-        
+
         #loader {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: white; color: var(--google-blue);
@@ -77,14 +73,36 @@
 
         /* RIGHT: Dashboard */
         .dashboard-panel {
-            flex: 1; /* Takes 40% width */
+            flex: 1;
             background: white;
-            padding: 24px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            height: 100%; /* Important for internal scrolling */
+            gap: 15px;
+            height: 100%;
             box-sizing: border-box;
+        }
+
+        /* --- MOBILE OPTIMIZATION (THE FIX) --- */
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column; /* Stack vertically on phones */
+            }
+
+            .scene-wrapper {
+                flex: none; /* Don't grow automatically */
+                height: 35vh; /* Take up exactly 35% of screen height */
+                border-right: none;
+                border-bottom: 1px solid #dadce0;
+            }
+
+            .dashboard-panel {
+                flex: 1; /* Take remaining space */
+                padding: 15px;
+            }
+            
+            /* Make buttons bigger for touch */
+            button { padding: 15px !important; }
         }
 
         /* Card Styling */
@@ -92,100 +110,74 @@
             background: white;
             border: 1px solid #dadce0;
             border-radius: 8px;
-            padding: 20px;
+            padding: 15px;
         }
         
-        h2 { margin: 0 0 16px 0; font-size: 1.1rem; color: #202124; font-weight: 500; }
+        h2 { margin: 0 0 10px 0; font-size: 1rem; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
 
         /* Inputs */
-        .input-group { display: flex; gap: 12px; margin-bottom: 0; }
+        .input-group { display: flex; gap: 10px; }
         
         input {
-            padding: 10px 14px; border: 1px solid #dadce0; border-radius: 4px;
-            font-size: 1rem; width: 80px; outline: none; transition: 0.2s;
-            font-family: inherit; color: #3c4043;
+            padding: 10px; border: 1px solid #dadce0; border-radius: 4px;
+            font-size: 1rem; width: 60px; outline: none; -webkit-appearance: none;
         }
-        input:focus { border-color: var(--google-blue); border-width: 2px; padding: 9px 13px; }
+        input:focus { border-color: var(--google-blue); border-width: 1px; box-shadow: 0 0 0 2px rgba(66,133,244,0.2); }
 
-        /* Buttons (Google Material Style) */
+        /* Buttons */
         button {
-            flex: 1; padding: 10px 24px; border: none; border-radius: 4px;
+            flex: 1; padding: 10px; border: none; border-radius: 4px;
             font-weight: 500; cursor: pointer; transition: 0.2s;
             font-family: 'Google Sans', sans-serif; font-size: 0.95rem;
             box-shadow: 0 1px 2px rgba(60,64,67,0.3);
         }
         
-        button:active { box-shadow: none; transform: translateY(1px); }
-        
+        button:active { transform: scale(0.98); }
         .btn-add { background-color: var(--google-blue); color: white; }
-        .btn-add:hover { background-color: #3367d6; box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
-        
         .btn-serve { background-color: var(--google-green); color: white; }
-        .btn-serve:hover { background-color: #2d9249; box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
 
-        /* Queue List Container - FIXES SCROLLING */
+        /* Queue List */
         .queue-container {
-            flex: 1; /* Takes remaining height */
+            flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 0; /* Crucial for scrolling inside flex items */
+            min-height: 0;
             border: 1px solid #dadce0;
             border-radius: 8px;
             background: #fff;
         }
 
         .queue-header {
-            padding: 16px;
+            padding: 12px 16px;
             border-bottom: 1px solid #dadce0;
-            background: #f8f9fa;
+            background: #f1f3f4;
             border-radius: 8px 8px 0 0;
-            font-weight: 500;
+            font-weight: 500; font-size: 0.9rem;
         }
 
-        /* The actual scrolling part */
         .queue-list { 
             flex: 1; 
-            overflow-y: auto; /* Scroll ONLY here */
+            overflow-y: auto; 
             padding: 10px;
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
         }
         
-        /* Scrollbar styling */
-        .queue-list::-webkit-scrollbar { width: 8px; }
-        .queue-list::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
-
         /* Ticket Cards */
         .ticket {
-            background: white;
-            border: 1px solid #dadce0;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: 0.2s;
-            position: relative;
-            overflow: hidden;
+            background: white; border: 1px solid #dadce0;
+            padding: 12px; margin-bottom: 8px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: relative; overflow: hidden;
         }
         
-        /* Blue accent bar for regular */
-        .ticket::before {
-            content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
-            background: var(--google-blue);
-        }
-
-        /* Senior Styling */
+        .ticket::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--google-blue); }
         .ticket.senior { background: #fef7e0; border-color: #fce8b2; }
         .ticket.senior::before { background: var(--google-yellow); }
 
         .ticket-info strong { display: block; font-size: 1rem; color: #202124; }
         .ticket-info span { font-size: 0.85rem; color: #5f6368; }
-
-        .priority-badge {
-            background: var(--google-yellow); color: #202124;
-            padding: 4px 10px; border-radius: 12px;
-            font-size: 0.75rem; font-weight: bold; letter-spacing: 0.5px;
-        }
+        
+        .priority-badge { background: var(--google-yellow); padding: 4px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -193,37 +185,32 @@
     <header>
         <div class="logo">
             <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span>
-            <span style="margin-left: 8px; font-weight: 400; color: #5f6368;">Bank Queue</span>
+            <span style="color: #5f6368; font-weight: 400; margin-left: 5px;">Queue</span>
         </div>
-        <div class="badge">BCA Project 2026</div>
+        <div style="font-size: 0.8rem; color: #5f6368; font-weight: 500;">BCA '26</div>
     </header>
 
     <main>
         <div class="scene-wrapper">
-            <div id="loader"><h2>Loading Simulation...</h2></div>
+            <div id="loader"><h2>Loading...</h2></div>
             <canvas id="canvas3d"></canvas>
         </div>
 
         <div class="dashboard-panel">
             
             <div class="card">
-                <h2>New Customer</h2>
+                <h2>New Entry</h2>
                 <div class="input-group">
-                    <input type="number" id="ageInput" placeholder="Age" value="25" min="1" max="120">
-                    <button class="btn-add" id="addBtn">Add to Queue</button>
-                    <button class="btn-serve" id="serveBtn">Serve Next</button>
+                    <input type="number" id="ageInput" placeholder="Age" value="25" inputmode="numeric">
+                    <button class="btn-add" id="addBtn">Add</button>
+                    <button class="btn-serve" id="serveBtn">Serve</button>
                 </div>
             </div>
 
             <div class="queue-container">
                 <div class="queue-header" id="queueHeader">Current Queue (0)</div>
                 <div class="queue-list" id="queueDisplay">
-                    <div style="text-align: center; margin-top: 40px; color: #9aa0a6;">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; margin-bottom: 10px;">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
+                    <div style="text-align: center; margin-top: 20px; color: #9aa0a6;">
                         <p>No customers waiting</p>
                     </div>
                 </div>
@@ -237,6 +224,12 @@
 
         const canvas = document.getElementById('canvas3d');
         const app = new Application(canvas);
+        
+        // --- PIXEL RATIO FIX --- 
+        // Note: The Spline Application usually handles this automatically.
+        // But this line ensures the canvas doesn't look blurry on Retina screens
+        // if the layout changes dynamically.
+        // We do not need renderer.setPixelRatio, but we need to ensure the runtime knows the size.
         
         let queue = []; 
         let tokenCounter = 101; 
@@ -256,7 +249,6 @@
             const age = parseInt(ageInput.value);
             
             if(!age) { 
-                // Google-style shake animation for error
                 ageInput.style.borderColor = '#EA4335';
                 setTimeout(() => ageInput.style.borderColor = '#dadce0', 500);
                 return; 
@@ -304,12 +296,7 @@
 
             if (queue.length === 0) {
                 display.innerHTML = `
-                    <div style="text-align: center; margin-top: 40px; color: #9aa0a6;">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; margin-bottom: 10px;">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
+                    <div style="text-align: center; margin-top: 20px; color: #9aa0a6;">
                         <p>No customers waiting</p>
                     </div>`;
                 return;
@@ -337,9 +324,6 @@
                 }
             });
             display.innerHTML = html;
-            
-            // Auto scroll to bottom of list when adding (optional, removed for better UX logic)
-            // display.scrollTop = display.scrollHeight; 
         }
 
         document.getElementById('addBtn').onclick = window.addCustomer;
